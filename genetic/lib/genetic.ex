@@ -45,24 +45,28 @@ defmodule Genetic do
 
   def run(problem, opts \\ []) do
     population = initialize(&problem.genotype/0, opts)
+    first_generation = 0
 
     population
-    |> evolve(problem, opts)
+    |> evolve(problem, first_generation, 0, 0, opts)
   end
 
-  def evolve(population, problem, opts \\ []) do
+  def evolve(population, problem, generation, last_max_fitness, temperature, opts \\ []) do
     population = evaluate(population, &problem.fitness_function/1, opts)
     best = hd(population)
     IO.write("\rCurrent Best: #{best.fitness}")
+    temperature = 0.8 * (temperature + (best.fitness - last_max_fitness))
 
-    if problem.terminate?(population) do
+    if problem.terminate?(population, generation, temperature) do
       best
     else
+      generation = generation + 1
+
       population
       |> select(opts)
       |> crossover(opts)
       |> mutation(opts)
-      |> evolve(problem, opts)
+      |> evolve(problem, generation, best.fitness, temperature, opts)
     end
   end
 end
